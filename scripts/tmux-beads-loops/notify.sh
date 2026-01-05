@@ -5,7 +5,7 @@
 set -euo pipefail
 
 if [ -z "${TMUX:-}" ]; then
-  echo "tmux-beads: not running inside tmux" >&2
+  echo "tmux-beads-loops: not running inside tmux" >&2
   exit 1
 fi
 
@@ -16,7 +16,7 @@ fi
 
 manager="${BEADS_MANAGER_TARGET:-$(tmux show -gqv @beads_manager)}"
 if [ -z "$manager" ]; then
-  echo "tmux-beads: manager target not set. Run scripts/tmux-beads/manager-init.sh in the manager window." >&2
+  echo "tmux-beads-loops: manager target not set. Run scripts/tmux-beads-loops/manager-init.sh in the manager window." >&2
   exit 1
 fi
 

@@ -13,7 +13,7 @@
           },
           {
             "type": "command",
-            "command": "bash scripts/tmux-beads/session-start.sh"
+            "command": "bash scripts/tmux-beads-loops/session-start.sh"
           }
         ]
       }

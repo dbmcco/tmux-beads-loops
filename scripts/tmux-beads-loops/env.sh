@@ -3,7 +3,7 @@
 # ABOUTME: Resolves manager target and disables beads daemon for worktrees by default.
 
 _tmux_beads_fail() {
-  echo "tmux-beads: $1" >&2
+  echo "tmux-beads-loops: $1" >&2
   return 1 2>/dev/null || exit 1
 }
 

@@ -67,13 +67,13 @@ fi
 branch="${branch_prefix}/${name}"
 
 if [ ! -d "$worktree_dir" ]; then
-  echo "tmux-beads: worktree not found: $worktree_dir" >&2
+  echo "tmux-beads-loops: worktree not found: $worktree_dir" >&2
   exit 1
 fi
 
 dirty_status="$(git -C "$worktree_dir" status --porcelain)"
 if [ -n "$dirty_status" ] && [ "$force_remove" -ne 1 ]; then
-  echo "tmux-beads: worktree has uncommitted changes. Use --force to remove anyway." >&2
+  echo "tmux-beads-loops: worktree has uncommitted changes. Use --force to remove anyway." >&2
   exit 1
 fi
 
@@ -89,4 +89,4 @@ fi
 
 git -C "$repo_root" worktree prune
 
-echo "tmux-beads: removed $worktree_dir"
+echo "tmux-beads-loops: removed $worktree_dir"

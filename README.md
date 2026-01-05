@@ -1,8 +1,8 @@
-# tmux-beads
+# tmux-beads-loops
 
 Credit: This project is a fork of Beads by Steve Yegge (https://github.com/steveyegge/beads).
 
-tmux-beads is a tmux-first orchestration layer on top of Beads for multi-agent coding.
+tmux-beads-loops is a tmux-first orchestration layer on top of Beads for multi-agent coding loops.
 
 ## Purpose
 
@@ -13,6 +13,15 @@ Coordinate multiple coding agents in tmux panes with a shared task graph and iso
 - Registers a manager pane, exports tmux-aware env vars, and routes worker notifications back to the manager.
 - Creates and cleans per-agent worktrees with predictable branch naming.
 - Bootstraps Claude, Codex, and OpenCode sessions to share the same hook behavior.
+
+## Loop Flow
+
+1) Start a single tmux agent in a manager window.
+2) Use that agent to define steps and decide which additional agents to spawn.
+3) Spawn new panes for Claude/Codex/OpenCode as needed.
+4) Workers claim tasks in Beads and notify the manager via tmux.
+
+Note: If you use `clauded`/`codexd` aliases, ensure they point to the CLI you expect.
 
 ## How It Works
 
@@ -34,7 +43,7 @@ Beta at best. Scripts and hooks may change; review before use and avoid critical
 
 ## Docs
 
-See `docs/TMUX_BEADS.md` for the tmux workflow, hooks, and scripts.
+See `docs/TMUX_BEADS_LOOPS.md` for the tmux workflow, hooks, and scripts.
 
 Below is the upstream Beads README for reference.
 

@@ -5,7 +5,7 @@
 set -euo pipefail
 
 if [ -z "${TMUX:-}" ]; then
-  echo "tmux-beads: manager init must run inside tmux" >&2
+  echo "tmux-beads-loops: manager init must run inside tmux" >&2
   exit 1
 fi
 
@@ -24,4 +24,4 @@ target="${session}:${window}"
 tmux set -g @beads_manager "$target"
 tmux set -g @beads_manager_name "$window_name"
 
-echo "tmux-beads: manager set to ${target} (${window_name})"
+echo "tmux-beads-loops: manager set to ${target} (${window_name})"

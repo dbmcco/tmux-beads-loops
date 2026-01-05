@@ -84,7 +84,7 @@ branch="${branch_prefix}/${name}"
 mkdir -p "$(dirname "$worktree_dir")"
 
 if [ -e "$worktree_dir" ]; then
-  echo "tmux-beads: worktree path already exists: $worktree_dir" >&2
+  echo "tmux-beads-loops: worktree path already exists: $worktree_dir" >&2
   exit 1
 fi
 
@@ -94,4 +94,4 @@ else
   git -C "$repo_root" worktree add -b "$branch" "$worktree_dir" "$base_branch"
 fi
 
-echo "tmux-beads: worktree ready at $worktree_dir (branch $branch, base $base_branch)"
+echo "tmux-beads-loops: worktree ready at $worktree_dir (branch $branch, base $base_branch)"

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ABOUTME: Session-start hook that bootstraps tmux-beads in agent panes.
+# ABOUTME: Session-start hook that bootstraps tmux-beads-loops in agent panes.
 # ABOUTME: Auto-registers the manager if none is set (opt-out via TMUX_BEADS_AUTO_MANAGER=0).
 
 set -euo pipefail
