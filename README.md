@@ -2,6 +2,42 @@
 
 Credit: This project is a fork of Beads by Steve Yegge (https://github.com/steveyegge/beads).
 
+tmux-beads is a tmux-first orchestration layer on top of Beads for multi-agent coding.
+
+## Purpose
+
+Coordinate multiple coding agents in tmux panes with a shared task graph and isolated git worktrees.
+
+## What It Does
+
+- Registers a manager pane, exports tmux-aware env vars, and routes worker notifications back to the manager.
+- Creates and cleans per-agent worktrees with predictable branch naming.
+- Bootstraps Claude, Codex, and OpenCode sessions to share the same hook behavior.
+
+## How It Works
+
+- Uses tmux global options (like `@beads_manager`) to track the manager window.
+- Uses per-agent git worktrees and disables the beads daemon for safety (`BEADS_NO_DAEMON=1`).
+- Tracks tasks with the `bd` CLI, optionally on a dedicated metadata branch.
+
+## Works With
+
+tmux, git worktrees, Beads (`bd`), Claude CLI, Codex CLI, and OpenCode (via wrapper).
+
+## Value
+
+Durable task coordination, fewer context handoff mistakes, and a predictable manager/worker loop.
+
+## Status
+
+Beta at best. Scripts and hooks may change; review before use and avoid critical production workflows.
+
+## Docs
+
+See `docs/TMUX_BEADS.md` for the tmux workflow, hooks, and scripts.
+
+Below is the upstream Beads README for reference.
+
 # bd - Beads
 
 **Distributed, git-backed graph issue tracker for AI agents.**
