@@ -39,6 +39,22 @@ TMUX_BEADS_CLAUDE_CMD=clauded TMUX_BEADS_CODEX_CMD=codexd \
   scripts/tmux-beads-loops/spawn-agent.sh claude --split v --name claude-1
 ```
 
+Auto-bootstrap (manager only):
+
+```bash
+TMUX_BEADS_BOOTSTRAP_TOTAL=4 \
+TMUX_BEADS_CLAUDE_CMD=clauded TMUX_BEADS_CODEX_CMD=codexd \
+codexd
+```
+
+Manual bootstrap:
+
+```bash
+scripts/tmux-beads-loops/bootstrap.sh --total 4
+```
+
+Note: tmux panes require splits, but this keeps everything in the same window (no new windows).
+
 ## How It Works
 
 - Uses tmux global options (like `@beads_manager` + `@beads_manager_pane`) to track the manager window + pane.

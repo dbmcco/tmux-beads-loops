@@ -74,3 +74,21 @@ else
     export TMUX_BEADS_ROLE="worker"
   fi
 fi
+
+bootstrap_requested=0
+if [ -n "${TMUX_BEADS_BOOTSTRAP_TOTAL:-}" ] || [ -n "${TMUX_BEADS_BOOTSTRAP_CLAUDE:-}" ] || [ -n "${TMUX_BEADS_BOOTSTRAP_CODEX:-}" ]; then
+  bootstrap_requested=1
+fi
+
+if [ "${TMUX_BEADS_ROLE:-}" = "manager" ] && [ "$bootstrap_requested" -eq 1 ]; then
+  bootstrapped="$(tmux show -gqv @beads_bootstrapped)"
+  if [ -z "$bootstrapped" ] || [ "${TMUX_BEADS_FORCE_BOOTSTRAP:-}" = "1" ]; then
+    if [ -x "${script_dir}/bootstrap.sh" ]; then
+      if ! "${script_dir}/bootstrap.sh"; then
+        echo "tmux-beads-loops: bootstrap failed" >&2
+      fi
+    else
+      echo "tmux-beads-loops: bootstrap script missing at ${script_dir}/bootstrap.sh" >&2
+    fi
+  fi
+fi

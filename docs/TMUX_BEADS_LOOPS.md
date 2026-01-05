@@ -33,7 +33,7 @@ fi
 Optional PATH helpers:
 
 ```bash
-for script in delegate env manager-init notify session-start spawn-agent worktree-create worktree-clean; do
+for script in bootstrap delegate env manager-init notify session-start spawn-agent worktree-create worktree-clean; do
   ln -sf "$HOME/.local/share/tmux-beads-loops/${script}.sh" "$HOME/.local/bin/tmux-beads-loops-${script}"
 done
 ```
@@ -82,6 +82,24 @@ Verify the manager target and pane:
 tmux show -gqv @beads_manager
 tmux show -gqv @beads_manager_pane
 ```
+
+## Bootstrap Agents (Same Window)
+
+Bootstrap spawns balanced Claude/Codex panes in the manager window:
+
+```bash
+scripts/tmux-beads-loops/bootstrap.sh --total 4
+```
+
+Auto-bootstrap via hooks (set before starting codexd/clauded):
+
+```bash
+TMUX_BEADS_BOOTSTRAP_TOTAL=4 \
+TMUX_BEADS_CLAUDE_CMD=clauded TMUX_BEADS_CODEX_CMD=codexd \
+codexd
+```
+
+Note: tmux panes require splits, but this keeps everything in the same window (no new windows).
 
 ## Create Worktrees Per Agent
 
@@ -166,6 +184,7 @@ Alias-aware defaults:
 export TMUX_BEADS_CLAUDE_CMD=clauded
 export TMUX_BEADS_CODEX_CMD=codexd
 export TMUX_BEADS_SHELL_FLAGS=-lic
+export TMUX_BEADS_BOOTSTRAP_TOTAL=4
 ```
 
 ## Worktree Cleanup
