@@ -1,0 +1,127 @@
+<!-- ABOUTME: Tmux-based multi-agent workflow using beads and git worktrees. -->
+<!-- ABOUTME: Documents manager/agent setup, notifications, and cleanup. -->
+
+# TMUX Beads Workflow
+
+This repo repurposes beads for tmux-coordinated coding agents. Each agent runs in
+its own git worktree and uses beads as the shared task graph. The manager can be
+any tmux window; the manager window registers itself and workers discover it.
+
+## One-Time Setup
+
+1) Initialize beads metadata on a dedicated branch:
+
+```bash
+bd init --branch beads-metadata
+```
+
+2) For worktrees, disable the beads daemon (shared DB + daemon can cross-commit):
+
+```bash
+export BEADS_NO_DAEMON=1
+```
+
+3) Claude hook (wired in `.claude/settings.json`):
+
+```bash
+~/.claude/hooks/session-start.sh
+```
+
+4) Codex hook (ensure your `~/.codex/hooks/session-start.sh` sources this repo hook):
+
+```bash
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || true)"
+if [ -n "$repo_root" ] && [ -f "$repo_root/scripts/tmux-beads/session-start.sh" ]; then
+  source "$repo_root/scripts/tmux-beads/session-start.sh"
+fi
+```
+
+5) OpenCode wrapper (auto-runs the same session-start hooks):
+
+```bash
+~/.local/bin/opencode
+```
+
+This wrapper sources `~/.claude/hooks/session-start.sh` (or the Codex hook
+fallback) and then runs the real binary at `~/.opencode/bin/opencode`. Override
+with `OPENCODE_REAL_BINARY` if needed.
+
+## Manager Initialization (Any Window)
+
+Run this in the manager window (HM0). It records the current session+window as
+the manager target:
+
+```bash
+scripts/tmux-beads/manager-init.sh
+```
+
+If you want the first pane to auto-claim manager, keep the default
+`TMUX_BEADS_AUTO_MANAGER=1`. Set `TMUX_BEADS_AUTO_MANAGER=0` to disable
+auto-registration and require explicit `manager-init.sh`.
+
+Verify the manager target:
+
+```bash
+tmux show -gqv @beads_manager
+```
+
+## Create Worktrees Per Agent
+
+```bash
+scripts/tmux-beads/worktree-create.sh agent-1
+scripts/tmux-beads/worktree-create.sh agent-2 --base main
+```
+
+Each worktree lands in `.worktrees/<name>` and uses `agent/<name>` as the branch
+name by default.
+
+## Agent Startup (Per Pane)
+
+1) Enter the worktree:
+
+```bash
+cd .worktrees/agent-1
+```
+
+2) Bootstrap Codex + tmux/beads env:
+
+```bash
+source .codex/hooks/session-start.sh && codex_session_start
+source scripts/tmux-beads/env.sh
+```
+
+If you use the hooks above, `session-start.sh` runs automatically and you do not
+need to source `env.sh` manually.
+
+`env.sh` exports:
+
+- `TMUX_BEADS_SESSION`, `TMUX_BEADS_WINDOW`, `TMUX_BEADS_WINDOW_NAME`
+- `TMUX_BEADS_PANE_ID`, `TMUX_BEADS_TARGET`, `TMUX_BEADS_MANAGER_TARGET`
+- `BEADS_NO_DAEMON=1` (if not already set)
+
+## Notify the Manager
+
+Send commands back to the manager window:
+
+```bash
+scripts/tmux-beads/notify.sh "bd show bd-123"
+scripts/tmux-beads/notify.sh "bd ready"
+```
+
+## Worktree Cleanup
+
+Safely remove worktrees when agents are done:
+
+```bash
+scripts/tmux-beads/worktree-clean.sh agent-1
+scripts/tmux-beads/worktree-clean.sh agent-2 --force --delete-branch
+```
+
+`--force` removes dirty worktrees, `--delete-branch` removes the agent branch.
+
+## Notes
+
+- Manager window can be any index (example: `LFW:4`). Workers rely on the
+  `@beads_manager` tmux option, not window names.
+- If `@beads_manager` is not set, re-run `manager-init.sh` in the manager pane.
+- Prefer `bd --no-daemon` when running one-off beads commands in worktrees.

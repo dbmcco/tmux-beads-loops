@@ -1,3 +1,7 @@
+# tmux-beads
+
+Credit: This project is a fork of Beads by Steve Yegge (https://github.com/steveyegge/beads).
+
 # bd - Beads
 
 **Distributed, git-backed graph issue tracker for AI agents.**
