@@ -33,7 +33,7 @@ fi
 Optional PATH helpers:
 
 ```bash
-for script in env manager-init notify session-start worktree-create worktree-clean; do
+for script in env manager-init notify session-start spawn-agent worktree-create worktree-clean; do
   ln -sf "$HOME/.local/share/tmux-beads-loops/${script}.sh" "$HOME/.local/bin/tmux-beads-loops-${script}"
 done
 ```
@@ -124,6 +124,19 @@ Send commands back to the manager window:
 scripts/tmux-beads-loops/notify.sh "bd show bd-123"
 scripts/tmux-beads-loops/notify.sh "bd ready"
 ```
+
+## Spawn Agents in the Same Session
+
+Use the spawn helper to keep new agents in the manager's tmux session:
+
+```bash
+scripts/tmux-beads-loops/spawn-agent.sh claude
+scripts/tmux-beads-loops/spawn-agent.sh codex --worktree .worktrees/agent-2
+scripts/tmux-beads-loops/spawn-agent.sh opencode --name opencode-1
+```
+
+This reads `@beads_manager` (or the current session) and creates new windows in
+that tmux session. Pass `--cmd` if you do not use `clauded`/`codexd` aliases.
 
 ## Worktree Cleanup
 

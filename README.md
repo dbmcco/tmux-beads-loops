@@ -18,10 +18,16 @@ Coordinate multiple coding agents in tmux panes with a shared task graph and iso
 
 1) Start a single tmux agent in a manager window.
 2) Use that agent to define steps and decide which additional agents to spawn.
-3) Spawn new panes for Claude/Codex/OpenCode as needed.
+3) Spawn new windows for Claude/Codex/OpenCode in the same tmux session.
 4) Workers claim tasks in Beads and notify the manager via tmux.
 
 Note: If you use `clauded`/`codexd` aliases, ensure they point to the CLI you expect.
+
+Suggested command (same session):
+
+```bash
+scripts/tmux-beads-loops/spawn-agent.sh claude
+```
 
 ## How It Works
 
