@@ -1,17 +1,28 @@
 #!/usr/bin/env bash
-# ABOUTME: Spawn a new agent window in the manager's tmux session.
+# ABOUTME: Spawn a new agent pane (or window) in the manager's tmux session.
 # ABOUTME: Uses @beads_manager (or current session) and runs the chosen CLI.
 
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: spawn-agent.sh <claude|codex|opencode|command> [--name <window-name>] [--worktree <path>] [--cmd <command>] [--shell <shell>]
+Usage: spawn-agent.sh <claude|codex|opencode|command> [options]
+
+Options:
+  --mode <pane|window>     Spawn a pane (default) or a new window
+  --split <h|v>            Pane split direction (default: h)
+  --base-pane <index>      Pane index to split from (default: manager or current)
+  --name <label>           Window name (window mode) or pane title (pane mode)
+  --worktree <path>        Working directory for the new pane/window
+  --cmd <command>          Override the command to run
+  --shell <shell>          Shell binary (default: $SHELL)
+  --shell-flags <flags>    Shell flags (default: -lic)
 
 Examples:
   spawn-agent.sh claude
-  spawn-agent.sh codex --name codex-2
+  spawn-agent.sh codex --mode window --name codex-2
   spawn-agent.sh opencode --worktree .worktrees/agent-3
+  spawn-agent.sh claude --split v --name claude-1
   spawn-agent.sh bash --cmd "htop"
 EOF
 }
@@ -32,10 +43,26 @@ shift
 window_name=""
 worktree=""
 command=""
-shell="${SHELL:-/bin/zsh}"
+shell="${TMUX_BEADS_SHELL:-${SHELL:-/bin/zsh}}"
+shell_flags="${TMUX_BEADS_SHELL_FLAGS:--lic}"
+mode="${TMUX_BEADS_SPAWN_MODE:-pane}"
+split="${TMUX_BEADS_SPAWN_SPLIT:-h}"
+base_pane="${TMUX_BEADS_BASE_PANE:-}"
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --mode)
+      mode="$2"
+      shift 2
+      ;;
+    --split)
+      split="$2"
+      shift 2
+      ;;
+    --base-pane)
+      base_pane="$2"
+      shift 2
+      ;;
     --name)
       window_name="$2"
       shift 2
@@ -52,6 +79,10 @@ while [ "$#" -gt 0 ]; do
       shell="$2"
       shift 2
       ;;
+    --shell-flags)
+      shell_flags="$2"
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -64,30 +95,92 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+explicit_cmd=""
+primary_cmd=""
+fallback_cmd=""
 case "$kind" in
   claude)
-    default_cmd="clauded"
+    explicit_cmd="${TMUX_BEADS_CLAUDE_CMD:-}"
+    primary_cmd="clauded"
+    fallback_cmd="claude"
     ;;
   codex)
-    default_cmd="codexd"
+    explicit_cmd="${TMUX_BEADS_CODEX_CMD:-}"
+    primary_cmd="codexd"
+    fallback_cmd="codex"
     ;;
   opencode)
-    default_cmd="opencode"
+    explicit_cmd="${TMUX_BEADS_OPENCODE_CMD:-}"
+    primary_cmd="opencode"
     ;;
   *)
-    default_cmd="$kind"
+    primary_cmd="$kind"
     ;;
 esac
 
 if [ -z "$command" ]; then
-  command="$default_cmd"
+  if [ -n "$explicit_cmd" ]; then
+    command="$explicit_cmd"
+  elif [ -n "$fallback_cmd" ]; then
+    command="if command -v $primary_cmd >/dev/null 2>&1; then $primary_cmd; else $fallback_cmd; fi"
+  else
+    command="$primary_cmd"
+  fi
 fi
 
 manager="${BEADS_MANAGER_TARGET:-$(tmux show -gqv @beads_manager)}"
 if [ -n "$manager" ]; then
   session="${manager%%:*}"
+  window="${manager##*:}"
 else
   session="$(tmux display-message -p '#S')"
+  window="$(tmux display-message -p '#I')"
+fi
+
+case "$mode" in
+  pane|window)
+    ;;
+  *)
+    echo "tmux-beads-loops: invalid --mode (use pane|window): $mode" >&2
+    exit 1
+    ;;
+esac
+
+if [ "$mode" = "pane" ]; then
+  case "$split" in
+    h|horizontal)
+      split_flag="-h"
+      ;;
+    v|vertical)
+      split_flag="-v"
+      ;;
+    *)
+      echo "tmux-beads-loops: invalid --split (use h|v): $split" >&2
+      exit 1
+      ;;
+  esac
+
+  if [ -z "$base_pane" ]; then
+    base_pane="$(tmux show -gqv @beads_manager_pane_index)"
+    if [ -z "$base_pane" ]; then
+      base_pane="$(tmux display-message -p '#P')"
+    fi
+  fi
+
+  target="${session}:${window}.${base_pane}"
+  if [ -n "$worktree" ]; then
+    new_pane_id="$(tmux split-window $split_flag -t "$target" -c "$worktree" -P -F '#{pane_id}' "$shell" "$shell_flags" "$command")"
+  else
+    new_pane_id="$(tmux split-window $split_flag -t "$target" -P -F '#{pane_id}' "$shell" "$shell_flags" "$command")"
+  fi
+
+  if [ -n "$window_name" ]; then
+    tmux select-pane -t "$new_pane_id" -T "$window_name"
+  fi
+
+  new_pane_index="$(tmux display-message -p -t "$new_pane_id" '#P')"
+  echo "tmux-beads-loops: spawned pane ${new_pane_index} in ${session}:${window} (${command})"
+  exit 0
 fi
 
 if [ -z "$window_name" ]; then
@@ -104,9 +197,9 @@ if [ -z "$window_name" ]; then
 fi
 
 if [ -n "$worktree" ]; then
-  tmux new-window -t "$session" -n "$window_name" -c "$worktree" "$shell" -lc "$command"
+  tmux new-window -t "$session" -n "$window_name" -c "$worktree" "$shell" "$shell_flags" "$command"
 else
-  tmux new-window -t "$session" -n "$window_name" "$shell" -lc "$command"
+  tmux new-window -t "$session" -n "$window_name" "$shell" "$shell_flags" "$command"
 fi
 
 echo "tmux-beads-loops: spawned ${window_name} in ${session} (${command})"

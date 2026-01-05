@@ -35,6 +35,7 @@ if [ -z "$TMUX_BEADS_MANAGER_TARGET" ] && [ "${BEADS_ASSUME_MANAGER:-}" = "1" ];
 fi
 
 TMUX_BEADS_MANAGER_PANE_ID="${BEADS_MANAGER_PANE_ID:-$(tmux show -gqv @beads_manager_pane)}"
+TMUX_BEADS_MANAGER_PANE_INDEX="${BEADS_MANAGER_PANE_INDEX:-$(tmux show -gqv @beads_manager_pane_index)}"
 TMUX_BEADS_MANAGER_PANE_TARGET="${BEADS_MANAGER_PANE_TARGET:-$(tmux show -gqv @beads_manager_pane_target)}"
 
 if [ -z "${BEADS_NO_DAEMON:-}" ]; then
@@ -50,4 +51,5 @@ export TMUX_BEADS_TARGET
 export TMUX_BEADS_PANE_TARGET
 export TMUX_BEADS_MANAGER_TARGET
 export TMUX_BEADS_MANAGER_PANE_ID
+export TMUX_BEADS_MANAGER_PANE_INDEX
 export TMUX_BEADS_MANAGER_PANE_TARGET

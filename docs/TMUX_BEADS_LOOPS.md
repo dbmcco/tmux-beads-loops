@@ -116,7 +116,7 @@ need to source `env.sh` manually.
 - `TMUX_BEADS_SESSION`, `TMUX_BEADS_WINDOW`, `TMUX_BEADS_WINDOW_NAME`
 - `TMUX_BEADS_PANE_INDEX`, `TMUX_BEADS_PANE_ID`, `TMUX_BEADS_PANE_TARGET`
 - `TMUX_BEADS_TARGET`, `TMUX_BEADS_MANAGER_TARGET`
-- `TMUX_BEADS_MANAGER_PANE_ID`, `TMUX_BEADS_MANAGER_PANE_TARGET`
+- `TMUX_BEADS_MANAGER_PANE_ID`, `TMUX_BEADS_MANAGER_PANE_INDEX`, `TMUX_BEADS_MANAGER_PANE_TARGET`
 - `BEADS_NO_DAEMON=1` (if not already set)
 
 ## Notify the Manager
@@ -144,16 +144,29 @@ scripts/tmux-beads-loops/delegate.sh --target hm:3.0 -- "git status"
 
 ## Spawn Agents in the Same Session
 
-Use the spawn helper to keep new agents in the manager's tmux session:
+Use the spawn helper to keep new agents in the manager's tmux session. It
+defaults to **pane** mode (same window), and supports `--mode window` if you
+prefer separate windows:
 
 ```bash
 scripts/tmux-beads-loops/spawn-agent.sh claude
 scripts/tmux-beads-loops/spawn-agent.sh codex --worktree .worktrees/agent-2
 scripts/tmux-beads-loops/spawn-agent.sh opencode --name opencode-1
+scripts/tmux-beads-loops/spawn-agent.sh claude --split v --name claude-1
+scripts/tmux-beads-loops/spawn-agent.sh codex --mode window --name codex-2
 ```
 
-This reads `@beads_manager` (or the current session) and creates new windows in
-that tmux session. Pass `--cmd` if you do not use `clauded`/`codexd` aliases.
+This reads `@beads_manager` (or the current session) and creates new panes in
+that tmux session by default. Pass `--mode window` for new windows, and use
+`--cmd` if you do not use `clauded`/`codexd` aliases.
+
+Alias-aware defaults:
+
+```bash
+export TMUX_BEADS_CLAUDE_CMD=clauded
+export TMUX_BEADS_CODEX_CMD=codexd
+export TMUX_BEADS_SHELL_FLAGS=-lic
+```
 
 ## Worktree Cleanup
 
