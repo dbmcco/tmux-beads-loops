@@ -33,7 +33,7 @@ fi
 Optional PATH helpers:
 
 ```bash
-for script in env manager-init notify session-start spawn-agent worktree-create worktree-clean; do
+for script in delegate env manager-init notify session-start spawn-agent worktree-create worktree-clean; do
   ln -sf "$HOME/.local/share/tmux-beads-loops/${script}.sh" "$HOME/.local/bin/tmux-beads-loops-${script}"
 done
 ```
@@ -65,8 +65,8 @@ with `OPENCODE_REAL_BINARY` if needed.
 
 ## Manager Initialization (Any Window)
 
-Run this in the manager window (HM0). It records the current session+window as
-the manager target:
+Run this in the manager window (HM0). It records the current session+window+pane
+as the manager target:
 
 ```bash
 scripts/tmux-beads-loops/manager-init.sh
@@ -76,10 +76,11 @@ If you want the first pane to auto-claim manager, keep the default
 `TMUX_BEADS_AUTO_MANAGER=1`. Set `TMUX_BEADS_AUTO_MANAGER=0` to disable
 auto-registration and require explicit `manager-init.sh`.
 
-Verify the manager target:
+Verify the manager target and pane:
 
 ```bash
 tmux show -gqv @beads_manager
+tmux show -gqv @beads_manager_pane
 ```
 
 ## Create Worktrees Per Agent
@@ -113,16 +114,32 @@ need to source `env.sh` manually.
 `env.sh` exports:
 
 - `TMUX_BEADS_SESSION`, `TMUX_BEADS_WINDOW`, `TMUX_BEADS_WINDOW_NAME`
-- `TMUX_BEADS_PANE_ID`, `TMUX_BEADS_TARGET`, `TMUX_BEADS_MANAGER_TARGET`
+- `TMUX_BEADS_PANE_INDEX`, `TMUX_BEADS_PANE_ID`, `TMUX_BEADS_PANE_TARGET`
+- `TMUX_BEADS_TARGET`, `TMUX_BEADS_MANAGER_TARGET`
+- `TMUX_BEADS_MANAGER_PANE_ID`, `TMUX_BEADS_MANAGER_PANE_TARGET`
 - `BEADS_NO_DAEMON=1` (if not already set)
 
 ## Notify the Manager
 
-Send commands back to the manager window:
+Send commands back to the manager pane:
 
 ```bash
 scripts/tmux-beads-loops/notify.sh "bd show bd-123"
 scripts/tmux-beads-loops/notify.sh "bd ready"
+```
+
+If you run this in the manager pane, it refuses and asks you to use
+`delegate.sh` for worker targets.
+
+## Delegate to Workers
+
+Use the delegate helper from the manager pane to send commands to worker panes.
+It resolves window names within the manager's tmux session and sends Enter
+separately for reliability.
+
+```bash
+scripts/tmux-beads-loops/delegate.sh --window claude-1 -- "bd ready"
+scripts/tmux-beads-loops/delegate.sh --target hm:3.0 -- "git status"
 ```
 
 ## Spawn Agents in the Same Session
@@ -154,4 +171,6 @@ scripts/tmux-beads-loops/worktree-clean.sh agent-2 --force --delete-branch
 - Manager window can be any index (example: `LFW:4`). Workers rely on the
   `@beads_manager` tmux option, not window names.
 - If `@beads_manager` is not set, re-run `manager-init.sh` in the manager pane.
+- If you split panes in the manager window, re-run `manager-init.sh` so the
+  manager pane ID stays correct.
 - Prefer `bd --no-daemon` when running one-off beads commands in worktrees.

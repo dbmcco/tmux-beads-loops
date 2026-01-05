@@ -11,6 +11,7 @@ Coordinate multiple coding agents in tmux panes with a shared task graph and iso
 ## What It Does
 
 - Registers a manager pane, exports tmux-aware env vars, and routes worker notifications back to the manager.
+- Adds a safe delegate helper for manager → worker commands (sends Enter and avoids self-targeting).
 - Creates and cleans per-agent worktrees with predictable branch naming.
 - Bootstraps Claude, Codex, and OpenCode sessions to share the same hook behavior.
 
@@ -20,18 +21,20 @@ Coordinate multiple coding agents in tmux panes with a shared task graph and iso
 2) Use that agent to define steps and decide which additional agents to spawn.
 3) Spawn new windows for Claude/Codex/OpenCode in the same tmux session.
 4) Workers claim tasks in Beads and notify the manager via tmux.
+5) Manager delegates to workers via `delegate.sh` (same tmux session).
 
 Note: If you use `clauded`/`codexd` aliases, ensure they point to the CLI you expect.
 
-Suggested command (same session):
+Suggested commands (same session):
 
 ```bash
 scripts/tmux-beads-loops/spawn-agent.sh claude
+scripts/tmux-beads-loops/delegate.sh --window claude-1 -- "bd ready"
 ```
 
 ## How It Works
 
-- Uses tmux global options (like `@beads_manager`) to track the manager window.
+- Uses tmux global options (like `@beads_manager` + `@beads_manager_pane`) to track the manager window + pane.
 - Uses per-agent git worktrees and disables the beads daemon for safety (`BEADS_NO_DAEMON=1`).
 - Tracks tasks with the `bd` CLI, optionally on a dedicated metadata branch.
 

@@ -14,14 +14,22 @@ if [ -n "$tmux_target" ]; then
   session="$(tmux display-message -p -t "$tmux_target" '#S')"
   window="$(tmux display-message -p -t "$tmux_target" '#I')"
   window_name="$(tmux display-message -p -t "$tmux_target" '#W')"
+  pane_index="$(tmux display-message -p -t "$tmux_target" '#P')"
+  pane_id="$(tmux display-message -p -t "$tmux_target" '#{pane_id}')"
 else
   session="$(tmux display-message -p '#S')"
   window="$(tmux display-message -p '#I')"
   window_name="$(tmux display-message -p '#W')"
+  pane_index="$(tmux display-message -p '#P')"
+  pane_id="$(tmux display-message -p '#{pane_id}')"
 fi
 target="${session}:${window}"
+pane_target="${session}:${window}.${pane_index}"
 
 tmux set -g @beads_manager "$target"
 tmux set -g @beads_manager_name "$window_name"
+tmux set -g @beads_manager_pane "$pane_id"
+tmux set -g @beads_manager_pane_index "$pane_index"
+tmux set -g @beads_manager_pane_target "$pane_target"
 
-echo "tmux-beads-loops: manager set to ${target} (${window_name})"
+echo "tmux-beads-loops: manager set to ${target} (${window_name}) pane ${pane_index}"
