@@ -7,12 +7,21 @@
 #   - For workers: block git checkout to other branches (allow checkout -- files)
 #   - For all: block tmux send-keys without trailing "Enter"
 #
-# Args: $1 = command being run
-# Exit 0 = allow, Exit 1 + message = block
+# Claude Code PreToolUse hooks receive JSON via stdin with tool_input.command
+# Exit 0 = allow, Exit 2 = block (with stderr message)
 
 set -uo pipefail
 
-command="${1:-}"
+# Read JSON from stdin
+input="$(cat)"
+
+# Parse command from JSON (requires jq)
+if ! command -v jq &>/dev/null; then
+    # No jq, can't parse - allow by default
+    exit 0
+fi
+
+command="$(echo "$input" | jq -r '.tool_input.command // ""' 2>/dev/null)"
 
 # If no command provided, allow
 if [ -z "$command" ]; then
@@ -167,7 +176,7 @@ role="$(get_role)"
 
 # Rule: tmux send-keys must have Enter (applies to all roles)
 if ! check_tmux_send_keys "$command"; then
-    exit 1
+    exit 2  # Exit 2 = blocking error in Claude Code hooks
 fi
 
 # Worker-specific rules
@@ -176,12 +185,12 @@ if [ "$role" = "worker" ]; then
 
     # Rule: no cd outside worktree
     if ! check_cd_command "$command" "$worktree_path"; then
-        exit 1
+        exit 2
     fi
 
     # Rule: no git checkout to other branches
     if ! check_git_checkout "$command"; then
-        exit 1
+        exit 2
     fi
 fi
 

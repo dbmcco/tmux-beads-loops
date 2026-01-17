@@ -2,9 +2,23 @@
 # ABOUTME: Claude Code post-commit hook for tmux-beads-loops multi-agent orchestration.
 # ABOUTME: After git commit, auto-runs `bd sync --from-main` for workers to pull bead updates.
 #
+# Claude Code PostToolUse hooks receive JSON via stdin with tool_input.command
 # Silent for non-workers (coordinator, wt-manager).
 
 # Don't use set -e - we want graceful failure
+
+# Read JSON from stdin
+input="$(cat)"
+
+# Parse command from JSON (requires jq)
+if command -v jq &>/dev/null; then
+    bash_command="$(echo "$input" | jq -r '.tool_input.command // ""' 2>/dev/null)"
+
+    # Only proceed if this was a git commit
+    if ! echo "$bash_command" | grep -q "git commit"; then
+        exit 0
+    fi
+fi
 
 # Exit cleanly if not running inside tmux
 if [ -z "${TMUX:-}" ]; then
