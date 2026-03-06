@@ -164,6 +164,7 @@ _mock_tmux_display_message() {
 
 _mock_tmux_show() {
   local scope=""
+  local target=""
   local quiet=""
   local value_only=""
   local option_name=""
@@ -176,6 +177,13 @@ _mock_tmux_show() {
         scope="global"
         shift
         ;;
+      -p)
+        shift
+        ;;
+      -t)
+        target="$2"
+        shift 2
+        ;;
       -q)
         quiet="1"
         shift
@@ -187,6 +195,15 @@ _mock_tmux_show() {
       -gq|-qg)
         scope="global"
         quiet="1"
+        shift
+        ;;
+      -pt|-tp)
+        target="$2"
+        shift 2
+        ;;
+      -pq|-qp|-pv|-vp|-pqv|-pvg|-pgq|-pvgq|-qpv|-qvp|-vpq|-vqp)
+        quiet="1"
+        value_only="1"
         shift
         ;;
       -gqv|-gvq|-qgv|-qvg|-vgq|-vqg)
@@ -224,6 +241,7 @@ _mock_tmux_show_options() {
 
 _mock_tmux_set() {
   local scope=""
+  local target=""
   local option_name=""
   local option_value=""
 
@@ -234,6 +252,17 @@ _mock_tmux_set() {
       -g)
         scope="global"
         shift
+        ;;
+      -p)
+        shift
+        ;;
+      -t)
+        target="$2"
+        shift 2
+        ;;
+      -pt|-tp)
+        target="$2"
+        shift 2
         ;;
       *)
         if [[ -z "$option_name" ]]; then

@@ -12,6 +12,7 @@ Coordinate multiple coding agents in tmux panes with a shared task graph and iso
 
 - Registers a manager pane, exports tmux-aware env vars, and routes worker notifications back to the manager.
 - Adds a safe delegate helper for manager → worker commands (sends Enter and avoids self-targeting).
+- Wraps spawned workers so startup bootstrap and finish notifications work for Codex/Claude/OpenCode consistently.
 - Creates and cleans per-agent worktrees with predictable branch naming.
 - Bootstraps Claude, Codex, and OpenCode sessions to share the same hook behavior.
 

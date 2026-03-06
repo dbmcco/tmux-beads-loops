@@ -4,6 +4,9 @@
 
 set -euo pipefail
 
+script_path="${BASH_SOURCE[0]:-$0}"
+script_dir="$(cd "$(dirname "$script_path")" && pwd)"
+
 usage() {
   cat <<'EOF'
 Usage: spawn-agent.sh <claude|codex|opencode|command> [options]
@@ -168,10 +171,16 @@ if [ "$mode" = "pane" ]; then
   fi
 
   target="${session}:${window}.${base_pane}"
+  runner="${script_dir}/agent-run.sh"
+  if [ ! -x "$runner" ]; then
+    echo "tmux-beads-loops: agent-run.sh not found at ${runner}" >&2
+    exit 1
+  fi
+
   if [ -n "$worktree" ]; then
-    new_pane_id="$(tmux split-window $split_flag -t "$target" -c "$worktree" -P -F '#{pane_id}' "$shell" "$shell_flags" "$command")"
+    new_pane_id="$(tmux split-window $split_flag -t "$target" -c "$worktree" -P -F '#{pane_id}' "$runner" --kind "$kind" --shell "$shell" --shell-flags "$shell_flags" --command "$command")"
   else
-    new_pane_id="$(tmux split-window $split_flag -t "$target" -P -F '#{pane_id}' "$shell" "$shell_flags" "$command")"
+    new_pane_id="$(tmux split-window $split_flag -t "$target" -P -F '#{pane_id}' "$runner" --kind "$kind" --shell "$shell" --shell-flags "$shell_flags" --command "$command")"
   fi
 
   if [ -n "$window_name" ]; then
@@ -197,9 +206,9 @@ if [ -z "$window_name" ]; then
 fi
 
 if [ -n "$worktree" ]; then
-  tmux new-window -t "$session" -n "$window_name" -c "$worktree" "$shell" "$shell_flags" "$command"
+  tmux new-window -t "$session" -n "$window_name" -c "$worktree" "${script_dir}/agent-run.sh" --kind "$kind" --shell "$shell" --shell-flags "$shell_flags" --command "$command"
 else
-  tmux new-window -t "$session" -n "$window_name" "$shell" "$shell_flags" "$command"
+  tmux new-window -t "$session" -n "$window_name" "${script_dir}/agent-run.sh" --kind "$kind" --shell "$shell" --shell-flags "$shell_flags" --command "$command"
 fi
 
 echo "tmux-beads-loops: spawned ${window_name} in ${session} (${command})"

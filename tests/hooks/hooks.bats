@@ -28,6 +28,10 @@ teardown() {
   fi
 }
 
+stop_script() {
+  echo "/Users/braydon/projects/experiments/tmux-beads-loops/scripts/tmux-beads-loops/stop.sh"
+}
+
 # =============================================================================
 # Session-Start Hook Tests
 # =============================================================================
@@ -261,42 +265,26 @@ teardown() {
 # Stop Hook Tests
 # =============================================================================
 
-@test "stop notifies coordinator when worker has assigned bead" {
+@test "stop notifies manager when worker has assigned bead" {
   # Setup worker with assigned bead
   setup_worker_role "$TEST_WORKTREE_ROOT/feature-branch"
   export TMUX_BEADS_ASSIGNED_BEAD="bd-123"
   mock_set_pane_option "@assigned_bead" "bd-123"
-
-  # Simulate stop hook - should notify coordinator
-  local should_notify=0
-  local assigned_bead
-
-  assigned_bead=$(mock_get_pane_option "@assigned_bead")
-
-  if [[ "$TMUX_BEADS_ROLE" == "worker" ]] && [[ -n "$assigned_bead" ]]; then
-    should_notify=1
-    # Hook would do: tmux send-keys -t $MANAGER_PANE "# Worker stopped with bead: $assigned_bead" Enter
-  fi
-
-  [[ "$should_notify" -eq 1 ]]
+  run bash "$(stop_script)"
+  [ "$status" -eq 0 ]
+  assert_tmux_command_called "send-keys -t %0"
+  grep -q "Bead: bd-123" "$MOCK_TMUX_SENT_KEYS_FILE"
+  [[ "$(mock_get_pane_option "@assigned_bead")" == "" ]]
 }
 
-@test "stop is silent when no bead assigned" {
+@test "stop still notifies manager when worker has no assigned bead" {
   # Setup worker without assigned bead
   setup_worker_role "$TEST_WORKTREE_ROOT/feature-branch"
   mock_set_pane_option "@assigned_bead" ""
-
-  # Simulate stop hook - should be silent
-  local should_notify=0
-  local assigned_bead
-
-  assigned_bead=$(mock_get_pane_option "@assigned_bead")
-
-  if [[ "$TMUX_BEADS_ROLE" == "worker" ]] && [[ -n "$assigned_bead" ]]; then
-    should_notify=1
-  fi
-
-  [[ "$should_notify" -eq 0 ]]
+  run bash "$(stop_script)"
+  [ "$status" -eq 0 ]
+  assert_tmux_command_called "send-keys -t %0"
+  grep -q "Bead: none" "$MOCK_TMUX_SENT_KEYS_FILE"
 }
 
 @test "stop cleans up worker state" {
@@ -304,32 +292,20 @@ teardown() {
   setup_worker_role "$TEST_WORKTREE_ROOT/feature-branch"
   mock_set_pane_option "@assigned_bead" "bd-456"
   mock_set_pane_option "@worktree_path" "$TEST_WORKTREE_ROOT/feature-branch"
-
-  # Stop hook should clean up pane options
-  # Simulate cleanup
-  tmux set @assigned_bead ""
-  tmux set @worktree_path ""
-
-  # After cleanup, options should be empty
-  # Note: This tests the mock infrastructure, the real hook would do this
+  run bash "$(stop_script)"
+  [ "$status" -eq 0 ]
   [[ "$(mock_get_pane_option "@assigned_bead")" == "" ]]
+  [[ "$(mock_get_pane_option "@worktree_path")" == "" ]]
 }
 
-@test "stop notifies coordinator even when wt-manager stops" {
+@test "stop notifies manager when wt-manager stops" {
   # wt-manager stopping might also need to notify
   setup_wt_manager_role
   mock_set_global_option "@wt_manager_active" "1"
-
-  # Simulate wt-manager stop
-  local should_notify=0
-
-  if [[ "$TMUX_BEADS_ROLE" == "wt-manager" ]]; then
-    # wt-manager stopping is significant - notify coordinator
-    should_notify=1
-  fi
-
-  # This test documents expected behavior - wt-manager should notify
-  [[ "$should_notify" -eq 1 ]]
+  run bash "$(stop_script)"
+  [ "$status" -eq 0 ]
+  assert_tmux_command_called "send-keys -t %0"
+  grep -q "Role: wt-manager" "$MOCK_TMUX_SENT_KEYS_FILE"
 }
 
 # =============================================================================

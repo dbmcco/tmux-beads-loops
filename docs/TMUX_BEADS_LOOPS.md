@@ -33,7 +33,7 @@ fi
 Optional PATH helpers:
 
 ```bash
-for script in bootstrap delegate env manager-init notify session-start spawn-agent worktree-create worktree-clean; do
+for script in agent-run bootstrap delegate env manager-init notify session-start spawn-agent stop worktree-create worktree-clean; do
   ln -sf "$HOME/.local/share/tmux-beads-loops/${script}.sh" "$HOME/.local/bin/tmux-beads-loops-${script}"
 done
 ```
@@ -44,12 +44,17 @@ done
 ~/.claude/hooks/session-start.sh
 ```
 
-5) Codex hook (ensure your `~/.codex/hooks/session-start.sh` sources the global hook):
+5) Codex hook (ensure your `~/.codex/hooks/session-start.sh` sources the global hook, and add a matching stop hook):
 
 ```bash
 global_hook="$HOME/.local/share/tmux-beads-loops/session-start.sh"
 if [ -f "$global_hook" ]; then
   source "$global_hook"
+fi
+
+stop_hook="$HOME/.local/share/tmux-beads-loops/stop.sh"
+if [ -f "$stop_hook" ]; then
+  "$stop_hook"
 fi
 ```
 
@@ -164,7 +169,9 @@ scripts/tmux-beads-loops/delegate.sh --target hm:3.0 -- "git status"
 
 Use the spawn helper to keep new agents in the manager's tmux session. It
 defaults to **pane** mode (same window), and supports `--mode window` if you
-prefer separate windows:
+prefer separate windows. Spawned workers now run through `agent-run.sh`, so
+Codex/Claude/OpenCode panes all get the shared tmux-beads bootstrap on start
+and a manager wake-up on exit:
 
 ```bash
 scripts/tmux-beads-loops/spawn-agent.sh claude
